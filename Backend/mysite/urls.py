@@ -16,7 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from backend import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('admin/load', views.get_medicine_by_name, name='get_medicine_by_name'),
 ]

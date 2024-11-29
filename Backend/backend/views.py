@@ -8,9 +8,9 @@ from dotenv import load_dotenv
 #load .env
 def start():
     load_dotenv()
-    # Ensure the GOOGLE_CLOUD_PROJECT environment variable is set
-    if not os.getenv('GOOGLE_CLOUD_PROJECT'):
-        raise ValueError("GOOGLE_CLOUD_PROJECT not set in .env file")
+    # Ensure the GOOGLE_API_KEY environment variable is set
+    if not os.getenv('GOOGLE_API_KEY'):
+        raise ValueError("GOOGLE_API_KEY not set in .env file")
 
 # Create your views here.
 @require_http_methods(["GET"])
@@ -18,6 +18,7 @@ def load(request):
     start()
     category = request.GET.get('category')
     question = ""
+
     # Set up the API key
     genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
 
@@ -34,11 +35,11 @@ def load(request):
     Another example: 
     Name one Taylor Swift album.
    
+    
+    Please don't do generic questions. However, don't be too creative. Just don't try to repeat alot.
     """
 
-    answer_prompt = f"""
-    {question} Only write your answer, no other words
-    """
+    
 
     max_attempts = 3
     for attempt in range(max_attempts):
@@ -54,17 +55,21 @@ def load(request):
                 question = response_text
             else:
                 raise Exception()
+            answer_prompt = f"""
+            {question} Only write your answer, no other words
+            """
             
             # Generate answer
+            print(answer_prompt)
             response = model.generate_content(answer_prompt)
 
             # Remove punctuation from the answer
-            answer = response.text.strip()
-            answer = ''.join(char for char in answer if char.isalnum() or char.isspace())
+            #answer = response.text.strip()
+            #answer = ''.join(char for char in answer if char.isalnum() or char.isspace())
 
 
             # return question and answer
-            return JsonResponse({'question': question, 'answer': answer})
+            return JsonResponse({'question': question, 'answer': response.text})
 
         except Exception as e:
             print(f"Attempt {attempt + 1}: Error occurred: {str(e)}. Retrying...")
@@ -86,21 +91,26 @@ def submit(request):
     model = genai.GenerativeModel('gemini-pro')
 
     # Prepare the prompt
-    check_answer_prompt = f"""
-    is {userAnswer} an answer to this question: {question}. Only respond with your answer, no other words please!
+    #check_answer_prompt = f"""
+    #is {userAnswer} an answer to this question: {question}. Only respond with your answer, no other words please!
    
-    """
+    #"""
 
-    check_identical_prompt = f"""
-    Are these two answers: “{userAnswer}” AND “{AIAnswer}”, the same response to this question: {question}. If the two answers are identical except for typos or simple words, then consider them the same.
-    """
+    #check_identical_prompt = f"""
+    #Are these two answers: “{userAnswer}” AND “{AIAnswer}”, the same response to this question: {question}. If the two answers are identical except for typos or simple words, then consider them the same.
+    #"""
 
     max_attempts = 3
     for attempt in range(max_attempts):
         try:
+            check_answer_prompt = f"""
+            is {userAnswer} an answer to this question, or close to being the answer to this question (for example a simple typo or only giving the first or last name of a valid answer): {question} Only respond with yes or no, no other words please!
+   
+            """
+           
             # Check if user answer is valid
             response = model.generate_content(check_answer_prompt)
-
+            
             # Remove punctuation and check for yes/no
             response_text = ''.join(char for char in response.text.strip() if char.isalnum() or char.isspace())
             response_text = response_text.lower()
@@ -114,6 +124,9 @@ def submit(request):
                  return JsonResponse({'isUserAnswerValid': False, 'isMatching': False})
             
             
+            check_identical_prompt = f"""
+            Are these two answers: “{userAnswer}” AND “{AIAnswer}”, the same response to this question: {question}. If the two answers are identical except for typos or simple words, then consider them the same. Only respond with yes or no please!
+            """
             # Check if user and AI answer are identical
             response = model.generate_content(check_identical_prompt)
 

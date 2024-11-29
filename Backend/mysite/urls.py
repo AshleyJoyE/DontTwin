@@ -20,5 +20,6 @@ from backend import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('admin/load', views.get_medicine_by_name, name='get_medicine_by_name'),
+    path('api/load', views.load, name='load'),
+    path('api/submit', views.submit, name='submit'),
 ]

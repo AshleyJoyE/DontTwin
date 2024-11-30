@@ -1,6 +1,11 @@
 'use client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// Initialize Google AI
+const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GOOGLE_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
 export default function GamePage() {
   const router = useRouter();
@@ -23,6 +28,104 @@ export default function GamePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadedQuestion, setLoadedQuestion] = useState('');
   
+  const loadQuestion = async (categoryValue) => {
+    setTimerStarted(false);
+    setIsLoading(true);
+    try {
+      // Create the prompt for generating a question
+      const createCategoryPrompt = `
+       The category is ${categoryValue}. Ask me to name anything related to the category. This could a name, concept, or something related to it. Below are some examples, which may or not be related to the category. 
+
+      For example: 
+      Name one united states president. 
+
+      Another example: 
+      Name one Taylor Swift album.
+   
+    
+      Please don't do generic questions. However, don't be too creative. Just don't try to repeat alot. Also, make sure the question has more than 1 correct answer.
+      `;
+
+      // Generate question
+      const result = await model.generateContent(createCategoryPrompt);
+      const response = await result.response;
+      const question = response.text();
+
+      // Generate AI's answer
+      const answerPrompt = `${question} Only write your answer, no other words`;
+      const answerResult = await model.generateContent(answerPrompt);
+      const answerResponse = await answerResult.response;
+      const aiAnswer = answerResponse.text();
+
+      console.log('Generated Question:', question); // Debug log
+      console.log('Generated Answer:', aiAnswer);   // Debug log
+
+      // Update state
+      setLoadedQuestion(question);
+      setAiAnswer(aiAnswer);
+      setQuestion(question);
+      setTimerPaused(false);
+      setTimerStarted(maxTime !== -1);
+      setShowAnswers(false);
+      setGameStatus(null);
+      setIsLoading(false);
+
+    } catch (error) {
+      console.error('Error generating question:', error);
+      setIsLoading(false);
+    }
+  };
+
+  const submitAnswer = async () => {
+    if (!userAnswer) return;
+
+    setTimerPaused(true);
+    setShowAnswers(true);
+
+    try {
+      // Check if user answer is valid
+      const checkAnswerPrompt = `
+        is ${userAnswer} an answer to this question, or very very close to being the answer to this question: ${question}. 
+        Be triple, triple, sure that you check the newest sources to make sure answers are not marked as invalid when they are valid! 
+        Only respond with yes or no, no other words please!
+      `;
+      
+      const validityResult = await model.generateContent(checkAnswerPrompt);
+      const validityResponse = await validityResult.response;
+      const isValid = validityResponse.text().toLowerCase() === 'yes';
+
+      if (!isValid) {
+        setGameStatus('invalid');
+        updateHighScore();
+        return;
+      }
+
+      // Check if answers match
+      const checkIdenticalPrompt = `
+        Are these two answers: "${userAnswer}" AND "${aiAnswer}", the same response to this question: ${question}. 
+        If the two answers are identical except for typos, then consider them the same. 
+        You keep considering different answers (ex. brutal and Good 4 u) as the same! Please avoid this at all costs!!!!
+        If the two answers do not match, then they are not the same!
+        Only respond with yes or no please! 
+      `;
+
+      const matchResult = await model.generateContent(checkIdenticalPrompt);
+      const matchResponse = await matchResult.response;
+      const isMatching = matchResponse.text().toLowerCase() === 'yes';
+
+      if (isMatching) {
+        setGameStatus('matched');
+        updateHighScore();
+      } else {
+        setScore(prevScore => prevScore + 1);
+        setGameStatus('survived');
+      }
+
+    } catch (error) {
+      console.error('Error checking answer:', error);
+    }
+  };
+
   useEffect(() => {
     // Get values from URL parameters
     const categoryParam = searchParams.get('category');
@@ -46,35 +149,7 @@ export default function GamePage() {
     setHighScore(highScores[categoryKey] || 0);
 
     // Load initial question
-    const loadInitialQuestion = async () => {
-      try {
-        const response = await fetch(`http://127.0.0.1:8000/api/load?category=${encodeURIComponent(categoryParam)}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setLoadedQuestion(data.question);
-        setAiAnswer(data.answer);
-        setQuestion(data.question);
-        setTimerPaused(false);
-        setTimerStarted(parsedTime !== -1); // Only start timer if not unlimited time
-        setShowAnswers(false);
-        setGameStatus(null);
-        setIsLoading(false);
-
-      } catch (error) {
-        console.error('Error loading question:', error);
-      }
-    };
-
-    loadInitialQuestion();
+    loadQuestion(categoryParam);
 
   }, [searchParams]);
 
@@ -111,83 +186,13 @@ export default function GamePage() {
     return () => clearInterval(timer);
   }, [timerStarted, timerPaused, maxTime]);
 
-  const loadQuestion = async (categoryValue) => {
-    setTimerStarted(false); // Pause timer while loading new question
-    setIsLoading(true);
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/api/load?category=${encodeURIComponent(categoryValue)}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setLoadedQuestion(data.question);
-      setAiAnswer(data.answer);
-      setQuestion(data.question);
-      setTimerPaused(false);
-      setTimerStarted(maxTime !== -1); // Only start timer if not unlimited time
-      setShowAnswers(false);
-      setGameStatus(null);
-      setIsLoading(false);
-
-    } catch (error) {
-      console.error('Error loading question:', error);
-    }
-  };
-
-  const submitAnswer = async () => {
-    if (!userAnswer) return;
-
-    setTimerPaused(true);
-    setShowAnswers(true);
-
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/api/submit?question=${encodeURIComponent(question)}&AIAnswer=${encodeURIComponent(aiAnswer)}&userAnswer=${encodeURIComponent(userAnswer)}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log(data);
-      
-      if (!data.isUserAnswerValid) {
-        setGameStatus('invalid');
-        // Update high score if current score is higher
-        const highScores = JSON.parse(localStorage.getItem('highScores') || '{}');
-        const categoryKey = category.toLowerCase();
-        if (score > (highScores[categoryKey] || 0)) {
-          highScores[categoryKey] = score;
-          localStorage.setItem('highScores', JSON.stringify(highScores));
-          setHighScore(score);
-        }
-      } else if (data.isMatching) {
-        setGameStatus('matched');
-        // Update high score if current score is higher
-        const highScores = JSON.parse(localStorage.getItem('highScores') || '{}');
-        const categoryKey = category.toLowerCase();
-        if (score > (highScores[categoryKey] || 0)) {
-          highScores[categoryKey] = score;
-          localStorage.setItem('highScores', JSON.stringify(highScores));
-          setHighScore(score);
-        }
-      } else {
-        setScore(prevScore => prevScore + 1);
-        setGameStatus('survived');
-      }
-    } catch (error) {
-      console.error('Error submitting answer:', error);
+  const updateHighScore = () => {
+    const highScores = JSON.parse(localStorage.getItem('highScores') || '{}');
+    const categoryKey = category.toLowerCase();
+    if (score > (highScores[categoryKey] || 0)) {
+      highScores[categoryKey] = score;
+      localStorage.setItem('highScores', JSON.stringify(highScores));
+      setHighScore(score);
     }
   };
 

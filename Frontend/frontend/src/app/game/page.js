@@ -7,7 +7,6 @@ export default function GamePage() {
   const searchParams = useSearchParams();
   
   // Initialize state
-  const [challenge, setChallenge] = useState('');
   const [time, setTime] = useState(0);
   const [aiAnswer, setAiAnswer] = useState('');
   const [userAnswer, setUserAnswer] = useState('');
@@ -20,7 +19,7 @@ export default function GamePage() {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [gameStatus, setGameStatus] = useState(null);
-  const [initialized, setInitialized] = useState(false);
+  const [dotCount, setDotCount] = useState(0);
   
   useEffect(() => {
     // Get values from URL parameters
@@ -47,6 +46,17 @@ export default function GamePage() {
 
   }, [searchParams]); // Remove initialized from dependencies to prevent re-runs
 
+  // Loading dots animation
+  useEffect(() => {
+    if (showAnswers) return;
+    
+    const interval = setInterval(() => {
+      setDotCount(prev => (prev + 1) % 4);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [showAnswers]);
+
   // Separate useEffect for timer
   useEffect(() => {
     if (!timerStarted || maxTime === -1) return;
@@ -59,7 +69,7 @@ export default function GamePage() {
         if (prevTime <= 0) {
           clearInterval(timer);
           setShowAnswers(true);
-          submitAnswer();
+          setGameStatus('timeout');
           return 0;
         }
         return prevTime - 1;
@@ -186,8 +196,8 @@ export default function GamePage() {
           <div className="text-xl text-2xl text-black font-semibold mb-6">You Get 1 Point For Each Round You Survive! </div>
 
           <button 
-            onClick={() => loadQuestion(category)}
-            className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition mb-8 text-xl"
+            onClick={() => router.push('/')}
+            className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition mb-8 text-xl border-2 border-black"
           >
             NEW GAME
           </button>
@@ -202,13 +212,14 @@ export default function GamePage() {
             {maxTime !== -1 && time >= 0 && (
               <div className="w-3/4 h-4 bg-gray-200 rounded-full mb-4">
                 <div 
-                  className="h-full bg-black rounded-full transition-all duration-1000"
+                  className="h-full bg-[#FF7B93] rounded-full transition-all duration-1000"
                   style={{width: `${(time/maxTime) * 100}%`}}
                 />
               </div>
             )}
 
-            <div className="mb-8 text-xl text-black font-medium">
+            {/* Unlimited time */}
+            <div className="mb-8 text-xl text-black font-bold">
               {maxTime === -1 ? 'UNLIMITED TIME' : time >= 0 ? `${time} seconds left` : '0 seconds left'}
             </div>
 
@@ -217,7 +228,7 @@ export default function GamePage() {
               <div className="flex-1 flex flex-col items-center border-r border-black pr-8">
                 <div className="mb-4 text-xl font-semibold text-black">You</div>
                 <div className="mb-4">
-                  <svg className="w-12 h-12 text-black" viewBox="0 0 24 24">
+                  <svg className="w-12 h-12 text-[#FF7B93]" viewBox="0 0 24 24">
                     <path fill="currentColor" d="M12 4a4 4 0 014 4 4 4 0 01-4 4 4 4 0 01-4-4 4 4 0 014-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4z"/>
                   </svg>
                 </div>
@@ -232,25 +243,31 @@ export default function GamePage() {
                   />
                   <button
                     onClick={submitAnswer}
-                    className="px-6 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition w-full"
+                    className="px-6 py-3 bg-[#FF7B93] text-white rounded-md hover:bg-gray-800 transition w-full"
                     disabled={showAnswers}
                   >
                     Submit
                   </button>
                 </div>
-                {showAnswers && userAnswer && <div className="mt-4 text-black">Your answer: {userAnswer}</div>}
+                {showAnswers && userAnswer && <div className="mt-4 text-black font-bold">Your answer: {userAnswer}</div>}
               </div>
 
               {/* Right Column */}
               <div className="flex-1 flex flex-col items-center pl-8">
                 <div className="mb-4 text-xl font-semibold text-black">AI</div>
                 <div className="mb-4">
-                  <svg className="w-12 h-12 text-black" viewBox="0 0 24 24">
+                  <svg className="w-12 h-12 text-[#FF7B93]" viewBox="0 0 24 24">
                     <path fill="currentColor" d="M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/>
                   </svg>
                 </div>
-                <div className="mb-4 text-xl text-black">...</div>
-                {showAnswers && aiAnswer && <div className="text-black">AI's Answer: {aiAnswer}</div>}
+                <div className="flex-1 flex items-center justify-center">
+                  {!showAnswers && (
+                    <span className="text-5xl text-black">
+                      {'.'.repeat(dotCount)}
+                    </span>
+                  )}
+                </div>
+                {showAnswers && aiAnswer && <div className="text-black font-bold">AI's Answer: {aiAnswer}</div>}
               </div>
             </div>
 
@@ -261,13 +278,13 @@ export default function GamePage() {
                 <div className="flex gap-4 justify-center">
                   <button 
                     onClick={() => router.push('/')}
-                    className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition"
+                    className="px-6 py-2 bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B94] transition"
                   >
                     Play Again
                   </button>
                   <button
                     onClick={submitAnswer}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                    className="px-6 py-2 bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B94] transition"
                   >
                     Override
                   </button>
@@ -286,7 +303,7 @@ export default function GamePage() {
                   </button>
                   <button
                     onClick={submitAnswer}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                    className="px-6 py-2 bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B94] transition"
                   >
                     Override
                   </button>
@@ -298,9 +315,20 @@ export default function GamePage() {
                 <p className="text-green-600 text-xl font-bold mb-4">You survived! Plus one point!</p>
                 <button 
                   onClick={handleNextRound}
-                  className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition"
+                  className="px-6 py-2 bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B94] transition"
                 >
                   Next Round
+                </button>
+              </div>
+            )}
+            {gameStatus === 'timeout' && (
+              <div className="mt-8 text-center">
+                <p className="text-red-600 text-xl font-bold mb-4">Time's up! Game Over!</p>
+                <button 
+                  onClick={() => router.push('/')}
+                  className="px-6 py-2 bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B94] transition"
+                >
+                  Play Again
                 </button>
               </div>
             )}

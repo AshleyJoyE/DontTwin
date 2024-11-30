@@ -1,8 +1,12 @@
 'use client';
 
 import Image from "next/image";
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function Home() {
+  const router = useRouter();
+  const [errorMessage, setErrorMessage] = useState('');
   
   return (
 <div className="flex flex-row items-center  min-h-screen bg-white">
@@ -35,40 +39,95 @@ export default function Home() {
         <h2 className="text-3xl font-semibold text-white mb-6 text-center">Don't match the AI! If you do, then GAME OVER! </h2>
       </div>
     </div>
-    <div className="flex flex-col items-center space-y-6 justify-center items-center">
+    <div className="flex flex-col items-center space-y-16 justify-center items-center w-[40vw]">
       {/* Category Field */}
-      <div className="flex flex-col items-start w-64">
+      <div className="flex flex-col items-start w-96 items-center">
         <label
-          className="text-lg font-semibold text-black mb-1"
+          className="text-2xl font-semibold text-[#211103] mb-2"
           htmlFor="category"
         >
-          Enter A Category:
+          Enter A Category
         </label>
         <input
           id="category"
           type="text"
-          className="border border-gray-400 rounded-md px-4 py-2 text-black w-full"
+          className="border-2 border-gray-400 rounded-md px-6 py-4 text-xl text-black w-full focus:outline-none focus:border-[#FF7B93]"
         />
+        {errorMessage && (
+          <p className="text-xl font-bold text-red-700">{errorMessage}</p>
+        )}
       </div>
 
       {/* Time Field */}
-      <div className="flex flex-col items-start w-64">
+      <div className="flex flex-col items-start w-96 items-center">
         <label
-          className="text-lg font-semibold text-black mb-1"
+          className="text-3xl font-semibold text-[#211103] mb-2"
           htmlFor="time"
         >
-          Time:
+          Time
         </label>
-        <input
-          id="time"
-          type="text"
-          className="border border-gray-400 rounded-md px-4 py-2 text-black w-full"
-        />
+        <div className="flex items-center w-full gap-4">
+          <input
+            id="time"
+            type="range"
+            min="0"
+            max="60"
+            defaultValue={15}
+            onChange={(e) => {
+              const timeDisplay = document.getElementById('timeDisplay');
+              const unlimitedBtn = document.getElementById('unlimitedBtn');
+              unlimitedBtn.classList.remove('animate-pulse', 'bg-[#FF7B93]');
+              unlimitedBtn.classList.add('bg-[#FF7B93]');
+              timeDisplay.textContent = `${e.target.value} seconds`;
+            }}
+            className="w-full h-4 bg-gray-200 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#FF7B93]"
+          />
+          <button
+            id="unlimitedBtn"
+            onClick={(e) => {
+              const timeSlider = document.getElementById('time');
+              const timeDisplay = document.getElementById('timeDisplay');
+              if (e.target.classList.contains('bg-[#FF7B93]')) {
+                e.target.classList.remove('bg-[#FF7B93]');
+                e.target.classList.add('bg-[#FF7B93]', 'animate-pulse');
+                timeSlider.value = 60;
+                timeDisplay.textContent = 'Unlimited time';
+              } else {
+                e.target.classList.remove('bg-[#FF7B93]', 'animate-pulse');
+                e.target.classList.add('bg-[#FF7B93]');
+                timeSlider.value = 15;
+                timeDisplay.textContent = '15 seconds';
+              }
+            }}
+            className="px-6 py-3 text-lg bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B93] transition whitespace-nowrap"
+          >
+            Unlimited
+          </button>
+        </div>
+        <div className="text-lg text-gray-600 mt-2">
+          <span id="timeDisplay">15 seconds</span>
+        </div>
       </div>
 
       {/* Start Button */}
       <button
-        className="mt-4 px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition text-2xl"
+        onClick={() => {
+          const category = document.getElementById('category').value.trim();
+          const timeSlider = document.getElementById('time');
+          
+          if (!category) {
+            setErrorMessage('Please enter a category');
+            return;
+          }
+          
+          const time = timeSlider.value === '60' && 
+            document.getElementById('timeDisplay').textContent === 'Unlimited time' 
+            ? -1 
+            : parseInt(timeSlider.value);
+            
+          router.push(`/game?category=${encodeURIComponent(category)}&time=${time}`);
+        }}
+        className="mt-8 px-12 py-4 bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B93]/80 transition text-3xl"
       >
         START
       </button>

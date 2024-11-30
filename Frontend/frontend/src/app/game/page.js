@@ -201,6 +201,11 @@ export default function GamePage() {
     setUserAnswer('');
     setTime(maxTime);
   };
+
+  const handleOverride = () => {
+    setScore(prevScore => prevScore + 1);
+    setGameStatus('survived');
+  };
   
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-r from-[hsla(320,69%,75%,1)] to-[hsla(349,100%,74%,1)] p-8 relative overflow-hidden">
@@ -322,6 +327,7 @@ export default function GamePage() {
             {gameStatus === 'invalid' && (
               <div className="mt-8 text-center">
                 <p className="text-red-600 text-xl font-bold mb-4">You entered an invalid answer! Game over!</p>
+                <p className="text-gray-600 text-lg mb-4">If you were right and didn't match the AI, use the override button to keep going, but be honest please!</p>
                 <div className="flex gap-4 justify-center">
                   <button 
                     onClick={() => router.push('/')}
@@ -330,7 +336,7 @@ export default function GamePage() {
                     Play Again
                   </button>
                   <button
-                    onClick={submitAnswer}
+                    onClick={handleOverride}
                     className="px-6 py-2 bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B94] transition"
                   >
                     Override
@@ -341,6 +347,7 @@ export default function GamePage() {
             {gameStatus === 'matched' && (
               <div className="mt-8 text-center">
                 <p className="text-red-600 text-xl font-bold mb-4">You matched the AI! Game over!</p>
+                <p className="text-gray-600 text-lg mb-4">If you were right and didn't match the AI, use the override button to keep going, but be honest please!</p>
                 <div className="flex gap-4 justify-center">
                   <button 
                     onClick={() => router.push('/')}
@@ -349,7 +356,7 @@ export default function GamePage() {
                     Play Again
                   </button>
                   <button
-                    onClick={submitAnswer}
+                    onClick={handleOverride}
                     className="px-6 py-2 bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B94] transition"
                   >
                     Override

@@ -20,6 +20,8 @@ export default function GamePage() {
   const [highScore, setHighScore] = useState(0);
   const [gameStatus, setGameStatus] = useState(null);
   const [dotCount, setDotCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadedQuestion, setLoadedQuestion] = useState('');
   
   useEffect(() => {
     // Get values from URL parameters
@@ -34,17 +36,47 @@ export default function GamePage() {
     
     // Set the state with the received values
     setCategory(categoryParam);
-    setMaxTime(parseInt(timeParam));
-    setTime(parseInt(timeParam));
+    const parsedTime = parseInt(timeParam);
+    setMaxTime(parsedTime);
+    setTime(parsedTime);
 
     // Get high score from cache for this category
     const highScores = JSON.parse(localStorage.getItem('highScores') || '{}');
     const categoryKey = categoryParam.toLowerCase();
     setHighScore(highScores[categoryKey] || 0);
 
-    loadQuestion(categoryParam);
+    // Load initial question
+    const loadInitialQuestion = async () => {
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/api/load?category=${encodeURIComponent(categoryParam)}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
 
-  }, [searchParams]); // Remove initialized from dependencies to prevent re-runs
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setLoadedQuestion(data.question);
+        setAiAnswer(data.answer);
+        setQuestion(data.question);
+        setTimerPaused(false);
+        setTimerStarted(parsedTime !== -1); // Only start timer if not unlimited time
+        setShowAnswers(false);
+        setGameStatus(null);
+        setIsLoading(false);
+
+      } catch (error) {
+        console.error('Error loading question:', error);
+      }
+    };
+
+    loadInitialQuestion();
+
+  }, [searchParams]);
 
   // Loading dots animation
   useEffect(() => {
@@ -81,6 +113,7 @@ export default function GamePage() {
 
   const loadQuestion = async (categoryValue) => {
     setTimerStarted(false); // Pause timer while loading new question
+    setIsLoading(true);
     try {
       const response = await fetch(`http://127.0.0.1:8000/api/load?category=${encodeURIComponent(categoryValue)}`, {
         method: 'GET',
@@ -94,12 +127,15 @@ export default function GamePage() {
       }
 
       const data = await response.json();
-      setQuestion(data.question);
+      setLoadedQuestion(data.question);
       setAiAnswer(data.answer);
+      setQuestion(data.question);
       setTimerPaused(false);
-      setTimerStarted(true);
+      setTimerStarted(maxTime !== -1); // Only start timer if not unlimited time
       setShowAnswers(false);
       setGameStatus(null);
+      setIsLoading(false);
+
     } catch (error) {
       console.error('Error loading question:', error);
     }
@@ -206,7 +242,13 @@ export default function GamePage() {
         <div className="w-[60vw] h-full p-8">
            {/* Question */}
           <div className="w-full h-full bg-white/90 rounded-lg p-8 flex flex-col items-center justify-center max-w-3xl mx-auto">
-            <h2 className="text-3xl mb-8 text-black font-semibold text-center">Question: {question}</h2>
+            <h2 className="text-3xl mb-8 text-black font-semibold text-center">
+              {isLoading ? (
+                <span>Loading{'.'.repeat(dotCount)}</span>
+              ) : (
+                `Question: ${question}`
+              )}
+            </h2>
             
             {/* Timer */}
             {maxTime !== -1 && time >= 0 && (
@@ -239,12 +281,12 @@ export default function GamePage() {
                     onChange={(e) => setUserAnswer(e.target.value)}
                     className="w-full border-2 border-gray-300 rounded-md p-3 text-black"
                     placeholder="Enter your answer"
-                    disabled={showAnswers}
+                    disabled={showAnswers || isLoading}
                   />
                   <button
                     onClick={submitAnswer}
                     className="px-6 py-3 bg-[#FF7B93] text-white rounded-md hover:bg-gray-800 transition w-full"
-                    disabled={showAnswers}
+                    disabled={showAnswers || isLoading}
                   >
                     Submit
                   </button>
@@ -278,7 +320,7 @@ export default function GamePage() {
                 <div className="flex gap-4 justify-center">
                   <button 
                     onClick={() => router.push('/')}
-                    className="px-6 py-2 bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B94] transition"
+                    className="px-6 py-2 bg-black text-white rounded-md hover:bg-[#FF7B94] transition"
                   >
                     Play Again
                   </button>

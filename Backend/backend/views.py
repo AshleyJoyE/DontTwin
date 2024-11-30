@@ -90,21 +90,12 @@ def submit(request):
     # Set up the model
     model = genai.GenerativeModel('gemini-pro')
 
-    # Prepare the prompt
-    #check_answer_prompt = f"""
-    #is {userAnswer} an answer to this question: {question}. Only respond with your answer, no other words please!
    
-    #"""
-
-    #check_identical_prompt = f"""
-    #Are these two answers: “{userAnswer}” AND “{AIAnswer}”, the same response to this question: {question}. If the two answers are identical except for typos or simple words, then consider them the same.
-    #"""
-
     max_attempts = 3
     for attempt in range(max_attempts):
         try:
             check_answer_prompt = f"""
-            is {userAnswer} an answer to this question, or close to being the answer to this question (for example a simple typo or only giving the first or last name of a valid answer): {question} Only respond with yes or no, no other words please!
+            is {userAnswer} an answer to this question, or close to being the answer to this question (for example a simple typo or only giving the first or last name of a valid answer): {question}. Be triple, triple, sure that you check the newest sources to make sure answers are not marked as invalid when they are valid! Only respond with yes or no, no other words please!
    
             """
            
@@ -125,7 +116,7 @@ def submit(request):
             
             
             check_identical_prompt = f"""
-            Are these two answers: “{userAnswer}” AND “{AIAnswer}”, the same response to this question: {question}. If the two answers are identical except for typos or simple words, then consider them the same. Only respond with yes or no please!
+            Are these two answers: “{userAnswer}” AND “{AIAnswer}”, the same response to this question: {question}. If the two answers are identical except for typos, then consider them the same. You keep considering different answers (ex. brutal and Good 4 u) as the same! Please avoid this at all costs!!!! Only respond with yes or no please! 
             """
             # Check if user and AI answer are identical
             response = model.generate_content(check_identical_prompt)

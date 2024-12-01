@@ -27,6 +27,7 @@ export default function GamePage() {
   const [dotCount, setDotCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [loadedQuestion, setLoadedQuestion] = useState('');
+  const [pastQuestions, setPastQuestions] = useState([]);
   
   const loadQuestion = async (categoryValue) => {
     setTimerStarted(false);
@@ -34,22 +35,26 @@ export default function GamePage() {
     try {
       // Create the prompt for generating a question
       const createCategoryPrompt = `
-       The category is ${categoryValue}. Ask me to name anything related to the category. This could a name, concept, or something related to it. Below are some examples, which may or not be related to the category. 
+       The category is ${categoryValue}. Ask me to name anything related to the category. This could be a name, concept, or something related to it.
+       
+       Here are the questions that have already been asked, please avoid asking these again:
+       ${pastQuestions.join('\n')}
 
-      For example: 
-      Name one united states president. 
-
-      Another example: 
-      Name one Taylor Swift album.
+       Example responses: 
+        - Name one united states president. 
+        - Name one Taylor Swift album.
    
-    
-      Please don't do generic questions. However, don't be too creative. Just don't try to repeat alot. Also, make sure the question has more than 1 correct answer.
+       Please don't do generic questions. However, don't be too creative. Make sure the question has more than 1 correct answer. And make sure the question has a correct answer!!!
+       The question should be unique and not similar to any previously asked questions.
       `;
 
       // Generate question
       const result = await model.generateContent(createCategoryPrompt);
       const response = await result.response;
       const question = response.text();
+
+      // Save question to past questions
+      setPastQuestions(prev => [...prev, question]);
 
       // Generate AI's answer
       const answerPrompt = `${question} Only write your answer, no other words`;
@@ -85,9 +90,36 @@ export default function GamePage() {
     try {
       // Check if user answer is valid
       const checkAnswerPrompt = `
-        is ${userAnswer} an answer to this question, or very very close to being the answer to this question: ${question}. 
-        Be triple, triple, sure that you check the newest sources to make sure answers are not marked as invalid when they are valid! 
-        Only respond with yes or no, no other words please!
+        Given the question: ${question}, please determine if the user's response: ${userAnswer}, accurately answers the question or is it very similar to a correct answer?
+        Consider answers correct if they:
+          - Contain minor typos (e.g., 'Aplpe' for 'Apple').
+          - Include only part of a name (e.g., 'Shakespeare' for 'William Shakespeare').
+          - Use abbreviations or shorthand (e.g., 'LA' for 'Los Angeles').
+          - Use alternate spellings (e.g., 'Color' for 'Colour').
+
+        Examples of Question and Answers that result in a 'Yes':
+          Question: 'Name a fruit that is red.'
+          User answer: 'Aplpe.'
+          Response: 'Yes.'
+
+          Question: 'Name a U.S. state.'
+          User answer: 'CA.'
+          Response: 'Yes.'
+
+
+        Examples of Question and Answers that result in a 'No':
+          Question: 'Name a fruit that is red.'
+          User answer: 'Carrot.'
+          Response: 'No.'
+
+          Question: 'Name an animal that flies.'
+          User answer: 'Chicken.'
+          Response: 'No.'
+          
+          (Explanation: While chickens can briefly flutter, they are not typically considered flying animals, so the response is No.)
+
+
+        Respond with 'Yes' or 'No' only please!! Thank you! Take your time when responding and double check your work atleast twice! If you are not sure, then respond with 'No'.
       `;
       
       const validityResult = await model.generateContent(checkAnswerPrompt);
@@ -106,7 +138,38 @@ export default function GamePage() {
         If the two answers are identical except for typos, then consider them the same. 
         You keep considering different answers (ex. brutal and Good 4 u) as the same! Please avoid this at all costs!!!!
         If the two answers do not match, then they are not the same!
-        Only respond with yes or no please! 
+        
+        Example 1:
+          Question: 'Name a fruit.'
+          User answer: 'Apple.'
+          AI answer: 'apple.'
+          Response: 'Yes.'
+
+        Example 2:
+          Question: 'Name a U.S. state.'
+          User answer: 'CA'
+          AI answer: 'California'
+          Response: 'Yes.'
+
+        Example 3:
+          Question: 'Name a type of transportation.'
+          User answer: 'Bicycle'
+          AI answer: 'Bike'
+          Response: 'Yes.'
+
+        Example 4:
+          Question: 'Name a color.'
+          User answer: 'Red'
+          AI answer: 'Blue'
+          Response: 'No.'
+
+        Example 5:
+          Question: 'Name a Taylor Swift song.'
+          User answer: 'New Romantics'
+          AI answer: 'Blank Space'
+          Response: 'No.'
+
+        Respond with 'Yes' or 'No' only please! Thank you! Take your time when responding and double check your work atleast twice! If you are not sure, then respond with 'No'.
       `;
 
       const matchResult = await model.generateContent(checkIdenticalPrompt);
@@ -289,6 +352,11 @@ export default function GamePage() {
                     type="text"
                     value={userAnswer}
                     onChange={(e) => setUserAnswer(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !showAnswers && !isLoading) {
+                        submitAnswer();
+                      }
+                    }}
                     className="w-full border-2 border-gray-300 rounded-md p-3 text-black"
                     placeholder="Enter your answer"
                     disabled={showAnswers || isLoading}
@@ -330,7 +398,7 @@ export default function GamePage() {
                 <p className="text-gray-600 text-lg mb-4">If you were right and didn't match the AI, use the override button to keep going, but be honest please!</p>
                 <div className="flex gap-4 justify-center">
                   <button 
-                    onClick={() => router.push('/')}
+                    onClick={() => window.location.reload()}
                     className="px-6 py-2 bg-black text-white rounded-md hover:bg-[#FF7B94] transition"
                   >
                     Play Again
@@ -350,8 +418,8 @@ export default function GamePage() {
                 <p className="text-gray-600 text-lg mb-4">If you were right and didn't match the AI, use the override button to keep going, but be honest please!</p>
                 <div className="flex gap-4 justify-center">
                   <button 
-                    onClick={() => router.push('/')}
-                    className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition"
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-2 bg-black text-white rounded-md hover:bg-[#FF7B94] transition"
                   >
                     Play Again
                   </button>
@@ -379,10 +447,10 @@ export default function GamePage() {
               <div className="mt-8 text-center">
                 <p className="text-red-600 text-xl font-bold mb-4">Time's up! Game Over!</p>
                 <button 
-                  onClick={() => router.push('/')}
-                  className="px-6 py-2 bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B94] transition"
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-2 bg-black text-white rounded-md hover:bg-[#FF7B94] transition"
                 >
-                  Play Again
+                    Play Again
                 </button>
               </div>
             )}

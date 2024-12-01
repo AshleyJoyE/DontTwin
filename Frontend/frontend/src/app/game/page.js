@@ -1,6 +1,6 @@
 'use client';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Initialize Google AI
@@ -8,6 +8,14 @@ const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
 export default function GamePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <GameContent />
+    </Suspense>
+  );
+}
+
+function GameContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   

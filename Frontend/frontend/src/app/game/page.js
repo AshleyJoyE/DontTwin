@@ -1,11 +1,7 @@
 'use client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize Google AI
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GOOGLE_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
 export default function GamePage() {
   return (
@@ -18,6 +14,8 @@ export default function GamePage() {
 function GameContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const curr_model = "anthropic/claude-3.5-sonnet";
+  const curr_model_is_matching = "google/gemini-2.0-flash-001"
   
   // Initialize state
   const [time, setTime] = useState(0);
@@ -36,6 +34,7 @@ function GameContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadedQuestion, setLoadedQuestion] = useState('');
   const [pastQuestions, setPastQuestions] = useState([]);
+  const apiKey = process.env.NEXT_PUBLIC_MODEL_API;
   
   const loadQuestion = async (categoryValue) => {
     setTimerStarted(false);
@@ -54,21 +53,52 @@ function GameContent() {
    
        Please don't do generic questions. However, don't be too creative. Make sure the question has more than 1 correct answer. And make sure the question has a correct answer!!!
        The question should be unique and not similar to any previously asked questions.
+       DON'T EXPLAIN WHY THE QUESTION IS GOOD! JUST STATE THE QUESTION!
       `;
 
       // Generate question
-      const result = await model.generateContent(createCategoryPrompt);
-      const response = await result.response;
-      const question = response.text();
+      const result = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: curr_model,
+          messages: [
+            {
+              role: 'user',
+              content: createCategoryPrompt,
+            },
+          ],
+        }),
+      });
+      const response = await result.json()
+      const question = response.choices[0].message.content
 
       // Save question to past questions
       setPastQuestions(prev => [...prev, question]);
 
       // Generate AI's answer
       const answerPrompt = `${question} Only write your answer, no other words`;
-      const answerResult = await model.generateContent(answerPrompt);
-      const answerResponse = await answerResult.response;
-      const aiAnswer = answerResponse.text();
+      const answerResult = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: curr_model,
+          messages: [
+            {
+              role: 'user',
+              content: answerPrompt,
+            },
+          ],
+        }),
+      });
+      const answerResponse = await answerResult.json();
+      const aiAnswer = answerResponse.choices[0].message.content;
 
       console.log('Generated Question:', question); // Debug log
       console.log('Generated Answer:', aiAnswer);   // Debug log
@@ -130,9 +160,25 @@ function GameContent() {
         Respond with 'Yes' or 'No' only please!! Thank you! Take your time when responding and double check your work atleast twice! If you are not sure, then respond with 'No'.
       `;
       
-      const validityResult = await model.generateContent(checkAnswerPrompt);
-      const validityResponse = await validityResult.response;
-      const isValid = validityResponse.text().toLowerCase() === 'yes';
+      const validityResult = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: curr_model,
+          messages: [
+            {
+              role: 'user',
+              content: checkAnswerPrompt,
+            },
+          ],
+        }),
+      });
+      var validityResponse = await validityResult.json();
+      validityResponse = validityResponse.choices[0].message.content.toLowerCase().match(/^(yes|no)\b/)?.[0] || "invalid response";
+      const isValid = validityResponse === 'yes';
 
       if (!isValid) {
         setGameStatus('invalid');
@@ -180,9 +226,26 @@ function GameContent() {
         Respond with 'Yes' or 'No' only please! Thank you! Take your time when responding and double check your work atleast twice! If you are not sure, then respond with 'No'.
       `;
 
-      const matchResult = await model.generateContent(checkIdenticalPrompt);
-      const matchResponse = await matchResult.response;
-      const isMatching = matchResponse.text().toLowerCase() === 'yes';
+      const matchResult = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: curr_model_is_matching,
+          messages: [
+            {
+              role: 'user',
+              content: checkIdenticalPrompt,
+            },
+          ],
+        }),
+      });
+      const matchResponse = await matchResult.json();
+      const answerMatch = matchResponse.choices[0].message.content.toLowerCase().match(/^(yes|no)\b/)?.[0] || "invalid response"; 
+      console.log(answerMatch)
+      const isMatching = answerMatch === 'yes';
 
       if (isMatching) {
         setGameStatus('matched');

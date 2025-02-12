@@ -42,16 +42,16 @@ function GameContent() {
     try {
       // Create the prompt for generating a question
       const createCategoryPrompt = `
-       The category is ${categoryValue}. Ask me to name anything related to the category. This could be a name, concept, or something related to it.
+       The category is ${categoryValue}. Ask a question about this category.
        
-       Here are the questions that have already been asked, please avoid asking these again:
+       Here are the questions that have already been asked, do not ask these questions again under any circumstance:
        ${pastQuestions.join('\n')}
 
        Example responses: 
         - Name one united states president. 
         - Name one Taylor Swift album.
    
-       Please don't do generic questions. However, don't be too creative. Make sure the question has more than 1 correct answer. And make sure the question has a correct answer!!!
+       Please give easy to medium level questions. Make sure the question has more than 1 correct answer. And make sure the question has a correct answer!!!
        The question should be unique and not similar to any previously asked questions.
        DON'T EXPLAIN WHY THE QUESTION IS GOOD! JUST STATE THE QUESTION!
       `;

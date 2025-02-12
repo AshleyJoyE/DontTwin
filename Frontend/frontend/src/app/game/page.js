@@ -14,7 +14,7 @@ export default function GamePage() {
 function GameContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const curr_model_2 = "openai/o3-mini-high";
+  const curr_model_2 = "deepseek/deepseek-r1-distill-llama-8b";
   const curr_model = "google/gemini-2.0-flash-001"
   
   // Initialize state

@@ -14,8 +14,8 @@ export default function GamePage() {
 function GameContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const curr_model = "anthropic/claude-3.5-sonnet";
-  const curr_model_is_matching = "google/gemini-2.0-flash-001"
+  const curr_model_2 = "openai/o3-mini-high";
+  const curr_model = "google/gemini-2.0-flash-001"
   
   // Initialize state
   const [time, setTime] = useState(0);
@@ -167,7 +167,7 @@ function GameContent() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: curr_model,
+          model: curr_model_2,
           messages: [
             {
               role: 'user',
@@ -233,7 +233,7 @@ function GameContent() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: curr_model_is_matching,
+          model: curr_model_2,
           messages: [
             {
               role: 'user',

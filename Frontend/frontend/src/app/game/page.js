@@ -188,43 +188,22 @@ function GameContent() {
 
       // Check if answers match
       const checkIdenticalPrompt = `
-        Are these two answers: "${userAnswer}" AND "${aiAnswer}", the same response to this question: ${question}. 
-        If the two answers are identical except for typos, then consider them the same. 
-        You keep considering different answers (ex. brutal and Good 4 u) as the same! Please avoid this at all costs!!!!
-        If the two answers do not match, then they are not the same!
-        
-        Example 1:
-          Question: 'Name a fruit.'
-          User answer: 'Apple.'
-          AI answer: 'apple.'
-          Response: 'Yes.'
+        Are these two answers: "${userAnswer}" AND "${aiAnswer}", the same response to this question: ${question}?  
 
-        Example 2:
-          Question: 'Name a U.S. state.'
-          User answer: 'CA'
-          AI answer: 'California'
-          Response: 'Yes.'
+        - If the answers are identical except for typos, capitalization, punctuation, or spacing, respond with "Yes."  
+        - If the answers differ in meaning, intent, or reference, respond with "No."  
+        - Do **not** mistakenly consider different answers (e.g., "brutal" vs. "Good 4 U") as the same.  
+        - If unsure, respond with "No."  
 
-        Example 3:
-          Question: 'Name a type of transportation.'
-          User answer: 'Bicycle'
-          AI answer: 'Bike'
-          Response: 'Yes.'
+        **Examples:**  
+        1. Q: "Name a fruit." | User: "Apple." | AI: "apple" → **"Yes."**  
+        2. Q: "Name a U.S. state." | User: "CA" | AI: "California" → **"Yes."**  
+        3. Q: "Name a Taylor Swift song." | User: "New Romantics" | AI: "Blank Space" → **"No."**  
+        4. Q: "Name a Taylor Swift song." | User: "august" | AI: "August." → **"Yes."**  
 
-        Example 4:
-          Question: 'Name a color.'
-          User answer: 'Red'
-          AI answer: 'Blue'
-          Response: 'No.'
+        Respond **only** with "Yes" or "No." Double-check your work.
 
-        Example 5:
-          Question: 'Name a Taylor Swift song.'
-          User answer: 'New Romantics'
-          AI answer: 'Blank Space'
-          Response: 'No.'
-
-        Respond with 'Yes' or 'No' only please! Thank you! Take your time when responding and double check your work atleast twice! If you are not sure, then respond with 'No'.
-      `;
+         `;
 
       const matchResult = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',

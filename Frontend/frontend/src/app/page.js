@@ -3,136 +3,147 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+// Add heart animation constants
+const HEART_COUNT = 200;
+const heartPositions = [...Array(HEART_COUNT)].map(() => ({
+  left: Math.random() * 100,
+  top: Math.random() * 100,
+  translateX: Math.random() * 100 - 50,
+  translateY: Math.random() * 100 - 50,
+  duration: Math.random() * 10 + 15,
+}));
+
 export default function Home() {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState('');
   
   return (
-<div className="flex flex-row items-center  min-h-screen bg-white">
-  <div className="flex flex-row space-x-8">
-    <div className="bg-gradient-to-r from-[hsla(320,69%,75%,1)] to-[hsla(349,100%,74%,1)] p-12 w-[60vw] h-[100vh] flex flex-col items-center justify-center relative overflow-hidden">
-      <div className="absolute inset-0">
-        {[...Array(200)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-[30vw] h-[30vh] bg-[#f0f4ef]/30"
-            style={{
-              clipPath: "path('M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z')",
-              animation: `float ${Math.random() * 10 + 15}s linear infinite`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-          />
-        ))}
+    <div className="flex flex-col lg:flex-row min-h-screen bg-white">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4565553802835245"
+     crossorigin="anonymous"></script>
+      {/* Left section - Pink-Orange gradient background with animated hearts */}
+      <div className="w-full lg:w-[60vw] bg-gradient-to-br from-pink-500 to-orange-400 p-4 md:p-12 min-h-[50vh] lg:h-screen flex flex-col items-center justify-center relative overflow-hidden">
+        
+        {/* Heart Background */}
+        <div className="absolute inset-0">
+          {heartPositions.map((heart, i) => (
+            <div
+              key={i}
+              className="absolute w-[30vw] h-[30vh] bg-[#f0f4ef]/30"
+              style={{
+                clipPath: "path('M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z')",
+                animation: `float${i} ${heart.duration}s linear infinite`,
+                left: `${heart.left}%`,
+                top: `${heart.top}%`,
+              }}
+            />
+          ))}
+        </div>
+        
+        <style jsx>{`
+          ${heartPositions.map((heart, i) => `
+            @keyframes float${i} {
+              0% { transform: translate(0, 0) rotate(0deg); }
+              50% { transform: translate(${heart.translateX}px, ${heart.translateY}px) rotate(180deg); }
+              100% { transform: translate(0, 0) rotate(360deg); }
+            }
+          `).join('\n')}
+        `}</style>
+    
+        <div className="relative z-20 rounded-lg p-6 bg-pink-600/60 w-full max-w-2xl mx-auto text-center">
+          <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6">DON'T TWIN!</h1>
+          <h2 className="text-lg md:text-2xl text-white font-light">Avoid matching the AI! Stay unique to win.</h2>
+        </div>
       </div>
-      <style jsx>{`
-        @keyframes float {
-          0% { transform: translate(0, 0) rotate(0deg); }
-          50% { transform: translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px) rotate(180deg); }
-          100% { transform: translate(0, 0) rotate(360deg); }
-        }
-      `}</style>
-      <div className="relative z-20 rounded-lg p-4 bg-gradient-to-r from-[hsla(323,72%,75%,1)] to-[hsla(347,97%,74%,1)]/90"
-      >
-        <h1 className="text-5xl font-semibold text-white mb-6 text-center">DON'T TWIN</h1>
-        <h2 className="text-3xl font-semibold text-white mb-6 text-center">Don't match the AI! If you do, then GAME OVER! </h2>
-      </div>
-    </div>
-    <div className="flex flex-col items-center space-y-16 justify-center items-center w-[40vw]">
-      {/* Category Field */}
-      <div className="flex flex-col items-start w-96 items-center">
-        <label
-          className="text-2xl font-semibold text-[#211103] mb-2"
-          htmlFor="category"
-        >
-          Enter A Category
-        </label>
-        <input
-          id="category"
-          type="text"
-          className="border-2 border-gray-400 rounded-md px-6 py-4 text-xl text-black w-full focus:outline-none focus:border-[#FF7B93]"
-        />
-        {errorMessage && (
-          <p className="text-xl font-bold text-red-700">{errorMessage}</p>
-        )}
-      </div>
-
-      {/* Time Field */}
-      <div className="flex flex-col items-start w-96 items-center">
-        <label
-          className="text-3xl font-semibold text-[#211103] mb-2"
-          htmlFor="time"
-        >
-          Time
-        </label>
-        <div className="flex items-center w-full gap-4">
+    
+      {/* Right section - Game Controls */}
+      <div className="w-full lg:w-[40vw] p-6 md:p-10 flex flex-col items-center justify-center space-y-10">
+        
+        {/* Category Input */}
+        <div className="flex flex-col items-center w-full max-w-md">
+          <label className="text-xl md:text-2xl font-semibold text-gray-800 mb-3" htmlFor="category">
+            Enter A Category
+          </label>
           <input
-            id="time"
-            type="range"
-            min="0"
-            max="60"
-            defaultValue={15}
-            onChange={(e) => {
-              const timeDisplay = document.getElementById('timeDisplay');
-              const unlimitedBtn = document.getElementById('unlimitedBtn');
-              unlimitedBtn.classList.remove('animate-pulse', 'bg-[#FF7B93]');
-              unlimitedBtn.classList.add('bg-[#FF7B93]');
-              timeDisplay.textContent = `${e.target.value} seconds`;
-            }}
-            className="w-full h-4 bg-gray-200 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#FF7B93]"
-          />
-          <button
-            id="unlimitedBtn"
-            onClick={(e) => {
-              const timeSlider = document.getElementById('time');
-              const timeDisplay = document.getElementById('timeDisplay');
-              if (e.target.classList.contains('bg-[#FF7B93]')) {
-                e.target.classList.remove('bg-[#FF7B93]');
-                e.target.classList.add('bg-[#FF7B93]', 'animate-pulse');
-                timeSlider.value = 60;
-                timeDisplay.textContent = 'Unlimited time';
-              } else {
-                e.target.classList.remove('bg-[#FF7B93]', 'animate-pulse');
-                e.target.classList.add('bg-[#FF7B93]');
-                timeSlider.value = 15;
-                timeDisplay.textContent = '15 seconds';
+            id="category"
+            type="text"
+            className="border-2 border-pink-300 rounded-md px-5 py-3 text-lg text-black w-full focus:outline-none focus:border-pink-500"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const category = e.target.value.trim();
+                const time = document.getElementById('time').value;
+                
+                if (!category) {
+                  setErrorMessage("Please enter a category");
+                  return;
+                }
+                
+                const timeValue = time === '60' ? -1 : parseInt(time);
+                router.push(`/game?category=${encodeURIComponent(category)}&time=${timeValue}`);
               }
             }}
-            className="px-6 py-3 text-lg bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B93] transition whitespace-nowrap"
-          >
-            Unlimited
-          </button>
+          />
+          {errorMessage && (
+            <p className="text-red-500 mt-2">{errorMessage}</p>
+          )}
         </div>
-        <div className="text-lg text-gray-600 mt-2">
-          <span id="timeDisplay">15 seconds</span>
+    
+        {/* Timer Control */}
+        <div className="flex flex-col items-center w-full max-w-md">
+          <label className="text-xl md:text-2xl font-semibold text-gray-800 mb-3" htmlFor="time">
+            Set Time Limit
+          </label>
+          <div className="flex items-center w-full gap-4">
+            <input
+              id="time"
+              type="range"
+              min="10"
+              max="60"
+              defaultValue={15}
+              onChange={(e) => {
+                document.getElementById('timeDisplay').textContent = `${e.target.value} seconds`;
+              }}
+              className="w-full h-4 bg-pink-100 rounded-full appearance-none cursor-pointer focus:outline-none
+              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-pink-600
+              [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-pink-600
+              [&::-ms-thumb]:appearance-none [&::-ms-thumb]:h-4 [&::-ms-thumb]:w-4 [&::-ms-thumb]:rounded-full [&::-ms-thumb]:bg-pink-600"
+            />
+            <button
+              id="unlimitedBtn"
+              onClick={() => {
+                const timeSlider = document.getElementById('time');
+                timeSlider.value = 60;
+                document.getElementById('timeDisplay').textContent = "Unlimited";
+              }}
+              className="px-5 py-2 bg-pink-600 text-white font-semibold rounded-md hover:bg-pink-700 transition"
+            >
+              Unlimited
+            </button>
+          </div>
+          <div className="text-lg text-gray-700 mt-2">
+            <span id="timeDisplay">15 seconds</span>
+          </div>
         </div>
+    
+        {/* Start Button */}
+        <button
+          onClick={() => {
+            const category = document.getElementById('category').value.trim();
+            const time = document.getElementById('time').value;
+    
+            if (!category) {
+              setErrorMessage("Please enter a category");
+              return;
+            }
+    
+            const timeValue = time === '60' ? -1 : parseInt(time);
+            router.push(`/game?category=${encodeURIComponent(category)}&time=${timeValue}`);
+          }}
+          className="px-10 py-4 bg-pink-600 text-white text-2xl font-bold rounded-md hover:bg-pink-700 transition"
+        >
+          START
+        </button>
       </div>
-
-      {/* Start Button */}
-      <button
-        onClick={() => {
-          const category = document.getElementById('category').value.trim();
-          const timeSlider = document.getElementById('time');
-          
-          if (!category) {
-            setErrorMessage('Please enter a category');
-            return;
-          }
-          
-          const time = timeSlider.value === '60' && 
-            document.getElementById('timeDisplay').textContent === 'Unlimited time' 
-            ? -1 
-            : parseInt(timeSlider.value);
-            
-          router.push(`/game?category=${encodeURIComponent(category)}&time=${time}`);
-        }}
-        className="mt-8 px-12 py-4 bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B93]/80 transition text-3xl"
-      >
-        START
-      </button>
     </div>
-  </div>
-</div>
-
   );
 }

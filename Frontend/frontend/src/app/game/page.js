@@ -2,6 +2,15 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
 
+// Add these constants at the top of the file, outside of any component
+const HEART_COUNT = 200;
+const heartPositions = [...Array(HEART_COUNT)].map(() => ({
+  left: Math.random() * 100,
+  top: Math.random() * 100,
+  translateX: Math.random() * 100 - 50,
+  translateY: Math.random() * 100 - 50,
+  duration: Math.random() * 10 + 15,
+}));
 
 export default function GamePage() {
   return (
@@ -36,6 +45,11 @@ function GameContent() {
   const [pastQuestions, setPastQuestions] = useState([]);
   const apiKey = process.env.NEXT_PUBLIC_MODEL_API;
   
+  // Add this function to clean the question text
+  const cleanQuestionText = (text) => {
+    return text.replace(/[^\w\s.,!?'-]/g, '').trim();
+  };
+
   const loadQuestion = async (categoryValue) => {
     setTimerStarted(false);
     setIsLoading(true);
@@ -74,7 +88,7 @@ function GameContent() {
         }),
       });
       const response = await result.json()
-      const question = response.choices[0].message.content
+      const question = cleanQuestionText(response.choices[0].message.content);
 
       // Save question to past questions
       setPastQuestions(prev => [...prev, question]);
@@ -239,6 +253,13 @@ function GameContent() {
     }
   };
 
+  // Add this handler for the Enter key
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !showAnswers && !isLoading && userAnswer.trim()) {
+      submitAnswer();
+    }
+  };
+
   useEffect(() => {
     // Get values from URL parameters
     const categoryParam = searchParams.get('category');
@@ -321,188 +342,148 @@ function GameContent() {
   };
   
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-r from-[hsla(320,69%,75%,1)] to-[hsla(349,100%,74%,1)] p-8 relative overflow-hidden">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-pink-500 to-orange-400 p-4 md:p-10 relative overflow-hidden">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4565553802835245"
+     crossorigin="anonymous"></script>
       {/* Heart Background */}
       <div className="absolute inset-0">
-        {[...Array(200)].map((_, i) => (
+        {heartPositions.map((heart, i) => (
           <div
             key={i}
             className="absolute w-[30vw] h-[30vh] bg-[#f0f4ef]/30"
             style={{
               clipPath: "path('M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z')",
-              animation: `float ${Math.random() * 10 + 15}s linear infinite`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              animation: `float${i} ${heart.duration}s linear infinite`,
+              left: `${heart.left}%`,
+              top: `${heart.top}%`,
             }}
           />
         ))}
       </div>
       <style jsx>{`
-        @keyframes float {
-          0% { transform: translate(0, 0) rotate(0deg); }
-          50% { transform: translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px) rotate(180deg); }
-          100% { transform: translate(0, 0) rotate(360deg); }
-        }
+        ${heartPositions.map((heart, i) => `
+          @keyframes float${i} {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(${heart.translateX}px, ${heart.translateY}px) rotate(180deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
+          }
+        `).join('\n')}
       `}</style>
 
       {/* Game Content */}
-      <div className="relative z-20 flex flex-row w-full h-full">
-        {/* Left Column */}
-        <div className="w-[40vw] flex flex-col justify-center p-8">
-          <h1 className="text-5xl font-bold mb-4 text-black">DON'T TWIN!</h1>
-          <h2 className="text-lg font-bold">High Score ({category}): {highScore}</h2>
-          <div className="text-xl text-2xl font-semibold mb-6">Current Score: {score}</div>
-          <div className="text-xl text-2xl text-black font-semibold mb-6">You Get 1 Point For Each Round You Survive! </div>
+      <div className="relative z-20 flex flex-col lg:flex-row w-full h-full gap-8 max-w-6xl">
 
-          <button 
-            onClick={() => router.push('/')}
-            className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition mb-8 text-xl border-2 border-black"
-          >
-            NEW GAME
-          </button>
+        {/* Left Column - Added Overlay for Better Contrast */}
+        <div className="w-full lg:w-[35%] relative flex flex-col justify-center items-center text-white text-center p-6 md:p-10">
+          <div className="absolute inset-0 bg-pink-900/40 rounded-lg"></div> 
+          <div className="relative z-10">
+            <h1 className="text-5xl md:text-6xl font-extrabold mb-6">DON'T TWIN!</h1>
+            <h2 className="text-lg md:text-2xl font-semibold">High Score: {highScore}</h2>
+            <p className="text-xl md:text-2xl font-light mb-8">Current Score: {score}</p>
+            <button 
+              onClick={() => router.push('/')}
+              className="px-6 py-3 bg-orange-200 text-pink-900 font-bold text-xl rounded-md hover:bg-orange-300 transition border border-orange-400 w-full md:w-auto"
+            >
+              NEW GAME
+            </button>
+          </div>
         </div>
-        {/* Right Column */}  
-        <div className="w-[60vw] h-full p-8">
-           {/* Question */}
-          <div className="w-full h-full bg-white/90 rounded-lg p-8 flex flex-col items-center justify-center max-w-3xl mx-auto">
-            <h2 className="text-3xl mb-8 text-black font-semibold text-center">
-              {isLoading ? (
-                <span>Loading{'.'.repeat(dotCount)}</span>
-              ) : (
-                `Question: ${question}`
-              )}
-            </h2>
-            
-            {/* Timer */}
-            {maxTime !== -1 && time >= 0 && (
-              <div className="w-3/4 h-4 bg-gray-200 rounded-full mb-4">
-                <div 
-                  className="h-full bg-[#FF7B93] rounded-full transition-all duration-1000"
-                  style={{width: `${(time/maxTime) * 100}%`}}
-                />
-              </div>
-            )}
 
-            {/* Unlimited time */}
-            <div className="mb-8 text-xl text-black font-bold">
-              {maxTime === -1 ? 'UNLIMITED TIME' : time >= 0 ? `${time} seconds left` : '0 seconds left'}
+        {/* Right Column - Game Interaction */}
+        <div className="w-full lg:w-[65%] bg-white/90 rounded-lg p-6 md:p-10 flex flex-col items-center shadow-lg border border-pink-200">
+
+          {/* Question Box */}
+          <h2 className="text-xl md:text-3xl mb-6 text-gray-900 font-semibold text-center">
+            {isLoading ? (
+              <span>Loading{'.'.repeat(dotCount)}</span>
+            ) : (
+              `Question: ${question}`
+            )}
+          </h2>
+
+          {/* Timer Bar */}
+          {maxTime !== -1 && time >= 0 && (
+            <div className="w-full md:w-3/4 h-4 bg-gray-300 rounded-full mb-4">
+              <div 
+                className="h-full bg-pink-700 rounded-full transition-all duration-1000"
+                style={{ width: `${(time / maxTime) * 100}%` }}
+              />
+            </div>
+          )}
+          <div className="mb-6 text-lg md:text-xl text-gray-900 font-bold">
+            {maxTime === -1 ? 'UNLIMITED TIME' : time >= 0 ? `${time} seconds left` : '0 seconds left'}
+          </div>
+
+          {/* Answer Input & AI Display */}
+          <div className="flex flex-col md:flex-row w-full max-w-2xl justify-center gap-8 md:gap-12">
+
+            {/* Player Section */}
+            <div className="flex-1 flex flex-col items-center bg-white rounded-lg p-6 shadow-md border border-pink-200">
+              <div className="mb-4 text-xl font-semibold text-gray-900">You</div>
+              <input
+                type="text"
+                value={userAnswer}
+                onChange={(e) => setUserAnswer(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="w-full border-2 border-pink-300 rounded-md p-3 text-gray-900 text-lg"
+                placeholder="Enter your answer"
+                disabled={showAnswers || isLoading}
+              />
+              <button
+                onClick={submitAnswer}
+                className="mt-4 px-6 py-3 bg-pink-600 text-white font-bold rounded-md hover:bg-pink-700 transition w-full"
+                disabled={showAnswers || isLoading}
+              >
+                Submit
+              </button>
             </div>
 
-           
-            <div className="flex w-full max-w-2xl justify-center gap-12">
-              <div className="flex-1 flex flex-col items-center border-r border-black pr-8">
-                <div className="mb-4 text-xl font-semibold text-black">You</div>
-                <div className="mb-4">
-                  <svg className="w-12 h-12 text-[#FF7B93]" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M12 4a4 4 0 014 4 4 4 0 01-4 4 4 4 0 01-4-4 4 4 0 014-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4z"/>
-                  </svg>
-                </div>
-                <div className="flex flex-col items-center gap-4 w-full">
-                  <input
-                    type="text"
-                    value={userAnswer}
-                    onChange={(e) => setUserAnswer(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !showAnswers && !isLoading) {
-                        submitAnswer();
-                      }
-                    }}
-                    className="w-full border-2 border-gray-300 rounded-md p-3 text-black"
-                    placeholder="Enter your answer"
-                    disabled={showAnswers || isLoading}
-                  />
-                  <button
-                    onClick={submitAnswer}
-                    className="px-6 py-3 bg-[#FF7B93] text-white rounded-md hover:bg-gray-800 transition w-full"
-                    disabled={showAnswers || isLoading}
-                  >
-                    Submit
-                  </button>
-                </div>
-                {showAnswers && userAnswer && <div className="mt-4 text-black font-bold">Your answer: {userAnswer}</div>}
-              </div>
-
-              {/* Right Column */}
-              <div className="flex-1 flex flex-col items-center pl-8">
-                <div className="mb-4 text-xl font-semibold text-black">AI</div>
-                <div className="mb-4">
-                  <svg className="w-12 h-12 text-[#FF7B93]" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/>
-                  </svg>
-                </div>
-                <div className="flex-1 flex items-center justify-center">
-                  {!showAnswers && (
-                    <span className="text-5xl text-black">
-                      {'.'.repeat(dotCount)}
-                    </span>
-                  )}
-                </div>
-                {showAnswers && aiAnswer && <div className="text-black font-bold">AI's Answer: {aiAnswer}</div>}
-              </div>
+            {/* AI Section */}
+            <div className="flex-1 flex flex-col items-center bg-white rounded-lg p-6 shadow-md border border-pink-200">
+              <div className="mb-4 text-xl font-semibold text-gray-900">AI</div>
+              {showAnswers && aiAnswer && <div className="text-gray-900 font-bold">AI's Answer: {aiAnswer}</div>}
             </div>
+          </div>
 
-            {/* Game Status Messages */}
-            {gameStatus === 'invalid' && (
-              <div className="mt-8 text-center">
-                <p className="text-red-600 text-xl font-bold mb-4">You entered an invalid answer! Game over!</p>
-                <p className="text-gray-600 text-lg mb-4">If you were right and didn't match the AI, use the override button to keep going, but be honest please!</p>
-                <div className="flex gap-4 justify-center">
-                  <button 
-                    onClick={() => window.location.reload()}
-                    className="px-6 py-2 bg-black text-white rounded-md hover:bg-[#FF7B94] transition"
-                  >
-                    Play Again
-                  </button>
-                  <button
-                    onClick={handleOverride}
-                    className="px-6 py-2 bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B94] transition"
-                  >
-                    Override
-                  </button>
-                </div>
-              </div>
-            )}
-            {gameStatus === 'matched' && (
-              <div className="mt-8 text-center">
-                <p className="text-red-600 text-xl font-bold mb-4">You matched the AI! Game over!</p>
-                <p className="text-gray-600 text-lg mb-4">If you were right and didn't match the AI, use the override button to keep going, but be honest please!</p>
-                <div className="flex gap-4 justify-center">
-                  <button 
-                    onClick={() => window.location.reload()}
-                    className="px-6 py-2 bg-black text-white rounded-md hover:bg-[#FF7B94] transition"
-                  >
-                    Play Again
-                  </button>
-                  <button
-                    onClick={handleOverride}
-                    className="px-6 py-2 bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B94] transition"
-                  >
-                    Override
-                  </button>
-                </div>
-              </div>
-            )}
+          {/* GAME FEEDBACK MESSAGE (Muted Colors) */}
+          {gameStatus && (
+            <div className={`mt-6 px-6 py-4 rounded-md text-center text-lg font-bold transition-all duration-500 ${
+              gameStatus === 'matched' ? "bg-pink-900 text-white" :
+              gameStatus === 'survived' ? "bg-orange-500 text-white" :
+              "bg-pink-700 text-white"
+            }`}>
+              {gameStatus === 'matched' && "You matched the AI! Game Over!"}
+              {gameStatus === 'survived' && "You survived! +1 Point!"}
+              {gameStatus === 'invalid' && "Invalid answer! Try Again!"}
+              {gameStatus === 'timeout' && "Time's up! Game Over!"}
+            </div>
+          )}
+
+          {/* Next Round / Restart / Override Buttons (Different Shades of Pink) */}
+          <div className="flex gap-4 mt-6">
             {gameStatus === 'survived' && (
-              <div className="mt-8 text-center">
-                <p className="text-green-600 text-xl font-bold mb-4">You survived! Plus one point!</p>
-                <button 
-                  onClick={handleNextRound}
-                  className="px-6 py-2 bg-[#FF7B93] text-white rounded-md hover:bg-[#FF7B94] transition"
-                >
-                  Next Round
-                </button>
-              </div>
+              <button 
+                onClick={handleNextRound}
+                className="px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition"
+              >
+                Next Round
+              </button>
             )}
-            {gameStatus === 'timeout' && (
-              <div className="mt-8 text-center">
-                <p className="text-red-600 text-xl font-bold mb-4">Time's up! Game Over!</p>
-                <button 
-                    onClick={() => window.location.reload()}
-                    className="px-6 py-2 bg-black text-white rounded-md hover:bg-[#FF7B94] transition"
-                >
-                    Play Again
-                </button>
-              </div>
+            {(gameStatus === 'matched' || gameStatus === 'invalid' || gameStatus === 'timeout') && (
+              <button 
+                onClick={() => window.location.reload()}
+                className="px-6 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition"
+              >
+                Play Again
+              </button>
+            )}
+            {(gameStatus === 'invalid' || gameStatus === 'matched') && (
+              <button
+                onClick={handleOverride}
+                className="px-6 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition"
+              >
+                Override
+              </button>
             )}
           </div>
         </div>

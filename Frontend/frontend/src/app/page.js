@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import * as gtag from './lib/gtag';
 
 // Add heart animation constants
 const HEART_COUNT = 200;
@@ -17,6 +18,11 @@ export default function Home() {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState('');
   
+  useEffect(() => {
+    const pathname = window.location.pathname;
+    gtag.pageview(pathname);
+  }, []);
+
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-white">
       <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4565553802835245"

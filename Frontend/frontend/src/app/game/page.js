@@ -1,6 +1,7 @@
 'use client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
+import * as gtag from '../lib/gtag';
 
 // Add these constants at the top of the file, outside of any component
 const HEART_COUNT = 200;
@@ -341,6 +342,11 @@ function GameContent() {
     setGameStatus('survived');
   };
   
+  useEffect(() => {
+    const pathname = window.location.pathname;
+    gtag.pageview(pathname);
+  }, []);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-pink-500 to-orange-400 p-4 md:p-10 relative overflow-hidden">
       <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4565553802835245"
